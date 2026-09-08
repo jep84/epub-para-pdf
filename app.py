@@ -1,11 +1,11 @@
 import os
 import tempfile
 from flask import Flask, render_template, request, send_file
+import ebooklib
 from ebooklib import epub
 from bs4 import BeautifulSoup
 from weasyprint import HTML
 
-# Define explicitamente onde está a pasta de templates (mesmo diretório deste arquivo)
 template_dir = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__, template_folder=os.path.join(template_dir, 'templates'))
 
@@ -31,8 +31,9 @@ def convert():
             
             html_content = "<html><head><meta charset='utf-8'><style>body { font-family: sans-serif; line-height: 1.6; margin: 20px; }</style></head><body>"
             
+            # Correção aqui: usando ebooklib.ITEM_DOCUMENT
             for item in book.get_items():
-                if item.get_type() == epub.ITEM_DOCUMENT:
+                if item.get_type() == ebooklib.ITEM_DOCUMENT:
                     soup = BeautifulSoup(item.get_content(), 'html.parser')
                     body = soup.find('body')
                     if body:
@@ -56,5 +57,5 @@ def convert():
             return f"Erro ao processar o EPUB: {str(e)}", 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
