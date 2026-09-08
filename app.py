@@ -5,7 +5,9 @@ from ebooklib import epub
 from bs4 import BeautifulSoup
 from weasyprint import HTML
 
-app = Flask(__name__)
+# Define explicitamente onde está a pasta de templates (mesmo diretório deste arquivo)
+template_dir = os.path.abspath(os.path.dirname(__file__))
+app = Flask(__name__, template_folder=os.path.join(template_dir, 'templates'))
 
 @app.route('/')
 def index():
@@ -20,22 +22,18 @@ def convert():
     if file.filename == '':
         return "Arquivo inválido", 400
 
-    # Cria diretório temporário para processamento
     with tempfile.TemporaryDirectory() as tmpdir:
         epub_path = os.path.join(tmpdir, "input.epub")
         file.save(epub_path)
 
         try:
-            # Lê o livro EPUB
             book = epub.read_epub(epub_path)
             
-            # Coleta o conteúdo HTML de todos os itens do documento
             html_content = "<html><head><meta charset='utf-8'><style>body { font-family: sans-serif; line-height: 1.6; margin: 20px; }</style></head><body>"
             
             for item in book.get_items():
                 if item.get_type() == epub.ITEM_DOCUMENT:
                     soup = BeautifulSoup(item.get_content(), 'html.parser')
-                    # Extrai o corpo ou todo o conteúdo HTML interno
                     body = soup.find('body')
                     if body:
                         html_content += str(body)
@@ -44,13 +42,9 @@ def convert():
                         
             html_content += "</body></html>"
 
-            # Caminho de saída do PDF
             pdf_path = os.path.join(tmpdir, "output.pdf")
-            
-            # Converte o HTML reunido em PDF usando WeasyPrint
             HTML(string=html_content).write_pdf(pdf_path)
 
-            # Envia o PDF gerado de volta para o usuário
             return send_file(
                 pdf_path, 
                 as_attachment=True, 
